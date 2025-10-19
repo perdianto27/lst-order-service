@@ -6,10 +6,7 @@ import {
   HttpCode,
   HttpException,
   Logger,
-  UseGuards,
 } from '@nestjs/common';
-
-import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -21,10 +18,7 @@ export class OrdersController {
   private readonly logger = new Logger(OrdersController.name);
 
   constructor(private readonly ordersService: OrdersService) {}
-
   @Post()
-  @UseGuards(ThrottlerGuard)
-  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation(CreateOrderDocs.operation)
   @ApiResponse(CreateOrderDocs.responses.success)

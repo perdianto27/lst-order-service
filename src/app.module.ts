@@ -1,5 +1,6 @@
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 import { LoggerMiddleware } from './common/middleware/logger.middlware';
 
@@ -14,15 +15,23 @@ import { RabbitmqService } from './rabbitmq/rabbitmq.service';
     ThrottlerModule.forRoot({
       throttlers: [
         {
-          ttl: 60000,
-          limit: 10,
+          ttl: parseInt(process.env.RATE_LIMIT_TTL ?? '60000', 10),
+          limit: parseInt(process.env.RATE_LIMIT_LIMIT ?? '3', 10),
         },
       ],
     }),
     OrdersModule,
   ],
   controllers: [AppController],
-  providers: [AppService, PrismaService, RabbitmqService],
+  providers: [
+    AppService,
+    PrismaService,
+    RabbitmqService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
   exports: [PrismaService, RabbitmqService],
 })
 export class AppModule implements NestModule {
