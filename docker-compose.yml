@@ -1,23 +1,45 @@
+version: '3.8'
+
 services:
   postgres:
     image: postgres:15
+    container_name: lst-order-service-postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: orders
     ports:
-      - '5432:5432'
+      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
 
   rabbitmq:
     image: rabbitmq:3-management
+    container_name: lst-order-service-rabbitmq
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
     ports:
-      - '5672:5672'
-      - '15672:15672'
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  order-service:
+    build: .
+    container_name: lst-service-order
+    env_file:
+      - .env.docker
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+      - rabbitmq
+    command: ["sh", "-c", "sleep 10 && npm run start:prod"]
+    restart: always
 
 volumes:
   pgdata:
